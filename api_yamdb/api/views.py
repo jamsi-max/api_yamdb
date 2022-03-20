@@ -1,13 +1,18 @@
-from rest_framework.permissions import AllowAny
+from inspect import classify_class_attrs
+from rest_framework.permissions import AllowAny, IsAdminUser
 from django.contrib.auth import get_user_model
-from rest_framework import mixins
+from rest_framework import mixins, filters
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
+from django_filters.rest_framework import DjangoFilterBackend
 
-from .serializers import SignupSerializer
+from reviews.models import Category, Genre, Title
+
+from .serializers import CategorySerializer, SignupSerializer, GenreSerializer, TitleSerializer
 
 User = get_user_model()
 
@@ -48,3 +53,29 @@ class SignupView(mixins.CreateModelMixin,
                   'yambd@yambd.com',
                   [user.email, ],
                   fail_silently=False)
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminUser,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class GengreViewSet(viewsets.ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminUser,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'name', 'year')

@@ -18,12 +18,15 @@ class Genre(models.Model):
 class Title(models.Model):
     name = models.CharField(max_length=200)
     year = models.IntegerField()
+    description = models.TextField()
     category = models.ForeignKey(
-        Category, related_name='titles', on_delete=models.SET_NULL)
+        Category, related_name='titles', null=True, on_delete=models.SET_NULL)
+    genre = models.ForeignKey(
+        Genre, related_name='genres', null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
 
 class GenreTitle(models.Model):
-    title_id = models.ForeignKey(Title, on_delete=models.SET_NULL)
-    genre_id = models.ForeignKey(Genre, on_delete=models.SET_NULL)
+    title_id = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre_id = models.ForeignKey(Genre, on_delete=models.CASCADE)
