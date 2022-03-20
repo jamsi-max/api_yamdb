@@ -1,3 +1,5 @@
+import datetime as dt
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -27,16 +29,31 @@ class SignupSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ('id', 'name', 'slug')
+        fields = ('name', 'slug')
+
+    def validate_slug(self, value):
+        # валидация символов?
+        return value
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
-        fields = ('id', 'name', 'slug')
+        fields = ('name', 'slug')
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True, required=False, read_only=True)
+    category = CategorySerializer(required=False, read_only=True)
+
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'category', 'genre')
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
+
+    def validate_year(self, value):
+        year = dt.date.today().year
+        if not (value <= year):
+            raise serializers.ValidationError('Проверьте год произведения!')
+        return value

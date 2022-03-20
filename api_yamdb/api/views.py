@@ -3,12 +3,12 @@ from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .permissions import IsAdminOrReadOnly
 from reviews.models import Category, Genre, Title
 
+from .permissions import IsAdminOrReadOnly
 from .serializers import (CategorySerializer, GenreSerializer,
                           SignupSerializer, TitleSerializer)
 
@@ -27,8 +27,7 @@ class SignupView(mixins.CreateModelMixin,
         user = User.objects.filter(username=username, email=email).first()
 
         if not user:
-            respons = super().create(request, *args, **kwargs)
-            return respons
+            return super().create(request, *args, **kwargs)
 
         comfirm_token = RefreshToken.for_user(user)
 
