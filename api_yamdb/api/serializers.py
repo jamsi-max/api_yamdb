@@ -1,9 +1,9 @@
-from lib2to3.pgen2.tokenize import TokenError
+from rest_framework.exceptions import NotFound
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
+# from lib2to3.pgen2.tokenize import TokenError
 from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
@@ -35,10 +35,11 @@ class CustomTokenRefreshSerializer(serializers.Serializer):
         fields = ('username', 'verify_token')
 
     def validate_username(self, value):
-        user = get_object_or_404(User, username=value)
-        if user is None:
-            raise serializers.ValidationError(
-                'Ошибка! Пользователь не существует!')
+        try:
+            User.objects.get(username=value)
+        except User.DoesNotExist:
+            raise NotFound(detail="Пользователь не существует", code=404)
+
         return value
 
     def validate(self, data):
