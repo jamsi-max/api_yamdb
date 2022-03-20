@@ -7,7 +7,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 
-from .serializers import CustomTokenRefreshSerializer, SignupSerializer
+from .serializers import GetTokenSerializer, SignupSerializer
 
 User = get_user_model()
 
@@ -51,7 +51,7 @@ class SignupView(mixins.CreateModelMixin,
 class GetTokenView(mixins.CreateModelMixin,
                    viewsets.GenericViewSet):
     permission_classes = [AllowAny, ]
-    serializer_class = CustomTokenRefreshSerializer
+    serializer_class = GetTokenSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
-# from lib2to3.pgen2.tokenize import TokenError
 from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
@@ -27,7 +26,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
 
-class CustomTokenRefreshSerializer(serializers.Serializer):
+class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     verify_token = serializers.CharField(required=True)
 
