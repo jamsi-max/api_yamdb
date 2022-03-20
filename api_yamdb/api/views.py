@@ -1,18 +1,15 @@
-from inspect import classify_class_attrs
-from rest_framework.permissions import AllowAny, IsAdminUser
 from django.contrib.auth import get_user_model
-from rest_framework import mixins, filters
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
 
-from .serializers import CategorySerializer, SignupSerializer, GenreSerializer, TitleSerializer
+from .serializers import (CategorySerializer, GenreSerializer,
+                          SignupSerializer, TitleSerializer)
 
 User = get_user_model()
 
@@ -53,6 +50,7 @@ class SignupView(mixins.CreateModelMixin,
                   'yambd@yambd.com',
                   [user.email, ],
                   fail_silently=False)
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()

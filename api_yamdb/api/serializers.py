@@ -1,8 +1,6 @@
-from unicodedata import category
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
 from reviews.models import Category, Genre, Title
 
 User = get_user_model()
@@ -25,6 +23,7 @@ class SignupSerializer(serializers.ModelSerializer):
                 'Ошибка! Имя "me" использовать запрещено!')
         return value
 
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -40,4 +39,4 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'category', 'genre')    
+        fields = ('id', 'name', 'year', 'category', 'genre')
