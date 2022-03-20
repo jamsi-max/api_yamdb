@@ -7,6 +7,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 
+
 from .serializers import SignupSerializer
 
 User = get_user_model()
@@ -19,32 +20,29 @@ class SignupView(mixins.CreateModelMixin,
     permission_classes = [AllowAny, ]
 
     def create(self, request, *args, **kwargs):
+        message = {'info': 'Код потверждения отправлен на электронную почту!'}
+        headers = None
         username = request.data.get('username')
         email = request.data.get('email')
         user = User.objects.filter(username=username, email=email).first()
 
-        if not user:
-            respons = super().create(request, *args, **kwargs)
-            return respons
+        if user is None:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = self.perform_create(serializer)
+            message = serializer.data
+            headers = self.get_success_headers(serializer.data)
 
         comfirm_token = RefreshToken.for_user(user)
 
-        send_mail('Token comfirm',
-                  f'You token comfirm is {comfirm_token}',
+        send_mail('Подтверждение регистрации на Yambd',
+                  f'Ваш код подтверждения {comfirm_token}',
                   'yambd@yambd.com',
                   [user.email, ],
                   fail_silently=False)
 
-        return Response(
-            {'info': 'The confirmation key has been sent to your email'},
-            status=status.HTTP_200_OK)
+        return Response(message,
+                        status=status.HTTP_200_OK, headers=headers)
 
     def perform_create(self, serializer):
-        user = serializer.save()
-        comfirm_token = RefreshToken.for_user(user)
-
-        send_mail('Token comfirm',
-                  f'You token comfirm is {comfirm_token}',
-                  'yambd@yambd.com',
-                  [user.email, ],
-                  fail_silently=False)
+        return serializer.save()
