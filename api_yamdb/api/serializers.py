@@ -62,6 +62,19 @@ class GetTokenSerializer(serializers.Serializer):
                 "Ошибка! Username не соответствует токену!"
             )
 
+        return data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
+        model = User
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

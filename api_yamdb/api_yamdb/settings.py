@@ -111,12 +111,13 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
 
 # подключаем движок filebased.EmailBackend
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# указываем директорию, в которую будут складываться файлы писем
+# указываем директорию, в которую будут сохраняться файлы писем
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 # подключаем кастомного юзера
 AUTH_USER_MODEL = 'users.YamdbUser'
 
+# настройки DRF права доступа, аутентификация, рагинация
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -128,6 +129,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 5,
 }
 
+# настройки токенов JWT (время жизни, заголовок, обновление)
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
     'AUTH_HEADER_TYPES': ('Bearer', ),

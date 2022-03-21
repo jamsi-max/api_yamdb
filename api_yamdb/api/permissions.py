@@ -22,10 +22,17 @@ class IfUserIsModerator(permissions.BasePermission):
 class IfUserIsAdministrator(permissions.BasePermission):
     message = 'Действие разрешено только администратору!'
 
-    def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.role == 'admin'
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            return request.user.role == 'admin'
+        return False
+
+    # def has_object_permission(self, request, view, obj):
+    #     if request.method in permissions.SAFE_METHODS:
+    #         return True
+    #     print("*"*80)
+    #     print(request.user.role == 'admin')
+    #     return request.user.role == 'admin'
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -36,4 +43,3 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             request.user.is_superuser
             or request.method in permissions.SAFE_METHODS
         )
-
