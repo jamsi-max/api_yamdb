@@ -30,7 +30,6 @@ class SignupView(mixins.CreateModelMixin,
         email = request.data.get('email')
         user = User.objects.filter(username=username, email=email).first()
 
-
         if user is None:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)

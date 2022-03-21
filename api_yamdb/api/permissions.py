@@ -36,4 +36,3 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             request.user.is_superuser
             or request.method in permissions.SAFE_METHODS
         )
-
