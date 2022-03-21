@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
@@ -7,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
+from rest_framework.permissions import IsAdminUser
 
 from .permissions import IsAdminOrReadOnly, IfUserIsAdministrator
 from .serializers import (GetTokenSerializer, SignupSerializer,
@@ -74,10 +76,21 @@ class GetTokenView(mixins.CreateModelMixin,
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    permission_classes = [IfUserIsAdministrator, ]
+    permission_classes = [IfUserIsAdministrator]
     pagination_class = LimitOffsetPagination
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    lookup_fields = ('username', )
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

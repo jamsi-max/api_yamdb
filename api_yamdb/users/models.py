@@ -2,10 +2,10 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 CHOICES = (
-    ('US', 'user'),
-    ('MO', 'moderator'),
-    ('AD', 'admin'),
-    ('SU', 'superuser')
+    ('user', 'user'),
+    ('moderator', 'moderator'),
+    ('admin', 'admin'),
+    ('superuser', 'superuser')
 )
 
 

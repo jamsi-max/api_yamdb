@@ -66,6 +66,16 @@ class GetTokenSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message='Пользователь с таким именем уже существует.')])
+    email = serializers.EmailField(
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message='Пользователь с таким почтовым ящиком уже существует.')]
+    )
+
     class Meta:
         fields = (
             "username",
