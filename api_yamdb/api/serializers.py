@@ -1,4 +1,3 @@
-
 from rest_framework.exceptions import NotFound
 import datetime as dt
 from django.contrib.auth import get_user_model
@@ -56,6 +55,19 @@ class GetTokenSerializer(serializers.Serializer):
         if user.username != data.get('username'):
             raise serializers.ValidationError(
                 'Ошибка! Username не соответствует токену!')
+
+        return data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
+        model = User
 
 
 class CategorySerializer(serializers.ModelSerializer):

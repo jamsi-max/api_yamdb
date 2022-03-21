@@ -8,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
 
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, IfUserIsAdministrator
 from .serializers import (GetTokenSerializer, SignupSerializer,
                           CategorySerializer, GenreSerializer,
-                          SignupSerializer, TitleSerializer)
+                          SignupSerializer, TitleSerializer, UserSerializer)
 
 
 User = get_user_model()
@@ -71,6 +71,13 @@ class GetTokenView(mixins.CreateModelMixin,
         return Response(
             {'access_token': access_token},
             status=status.HTTP_200_OK)
+
+
+class UsersViewSet(viewsets.ModelViewSet):
+    permission_classes = [IfUserIsAdministrator, ]
+    pagination_class = LimitOffsetPagination
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
