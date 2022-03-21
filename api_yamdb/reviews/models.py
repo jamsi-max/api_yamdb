@@ -5,9 +5,34 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 User = get_user_model()
 
 
+class Genre(models.Model):
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 class Title(models.Model):
-    class Meta:
-        verbose_name = "Произведение"
+    name = models.CharField(max_length=200)
+    year = models.IntegerField()
+    description = models.TextField()
+    rating = models.IntegerField()  # видимо связать с моделью rating по итогам
+    category = models.ForeignKey(
+        Category, related_name="titles", null=True, on_delete=models.SET_NULL
+    )
+    genre = models.ManyToManyField(Genre, through="GenreTitle")
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
@@ -28,9 +53,7 @@ class Review(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(10)],
         verbose_name="Рейтинг",
     )
-    pub_date = models.DateTimeField(
-        "Дата публикации", auto_now_add=True, verbose_name="Дата публикации"
-    )
+    pub_date = models.DateTimeField("Дата публикации", auto_now_add=True)
 
 
 class Comment(models.Model):
@@ -50,3 +73,8 @@ class Comment(models.Model):
     pub_date = models.DateTimeField(
         verbose_name="Дата публикации", auto_now_add=True
     )
+
+
+class GenreTitle(models.Model):
+    title_id = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre_id = models.ForeignKey(Genre, null=True, on_delete=models.SET_NULL)
