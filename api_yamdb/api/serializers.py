@@ -31,10 +31,10 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
-    verify_token = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
 
     class Meta:
-        fields = ('username', 'verify_token')
+        fields = ('username', 'confirmation_code')
 
     def validate_username(self, value):
         try:
@@ -46,7 +46,7 @@ class GetTokenSerializer(serializers.Serializer):
 
     def validate(self, data):
         try:
-            payload = RefreshToken(data.get('verify_token'))
+            payload = RefreshToken(data.get('confirmation_code'))
             user_id = payload.get('user_id', None)
         except TokenError:
             raise serializers.ValidationError(
@@ -73,20 +73,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'bio',
-                  'role')
-        model = User
-
-
-class FullAccountSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ('username',
-                  'password',
-                  'is_superuser',
-                  'is_active',
                   'email',
                   'first_name',
                   'last_name',
