@@ -129,8 +129,12 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True, required=False, read_only=True)
-    category = CategorySerializer(required=False, read_only=True)
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field="slug"
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(), slug_field="slug", many=True
+    )
 
     class Meta:
         model = Title
@@ -151,19 +155,40 @@ class TitleSerializer(serializers.ModelSerializer):
         return value
 
 
-# class ReviewSerializer(serializers.ModelSerializer):
-#    author = serializers.SlugRelatedField(
-#        many=False, read_only=True, slug_field="username"
-#    )
-#
-#    def check_review_exist_from_author(self, data):
-#        if self.context.get("request").user != "POST":
-#            return data
-#        user = self.context.get("request").user
-#
-#            raise ValidationError("Нельзя подписаться на самого себя")
-#        return value
-#
-#    class Meta:
-#        fields = ("id", "text", "author", "score", "pub_date")
-#         model = Review
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        many=False, read_only=True, slug_field="username"
+    )
+
+    def check_review_exist_from_author(self, value):
+        if self.context.get("request").user != "POST":
+            return value
+        user = self.context.get("request").user
+        title_id = self.context["review"].kwargs["title_id"]
+        if Review.objects.filter(author=user, title_id=title_id).exists():
+            raise serializers.ValidationError(
+                "Нельзя оставить отзыв на одно и тоже произведение дважды"
+            )
+        return value
+
+    class Meta:
+        fields = ("id", "name", "year", "description", "genre", "category")
+        model = Review
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        many=False, read_only=True, slug_field="username"
+    )
+
+    class Meta:
+        fields = (
+            "id",
+            "name",
+            "year",
+            "rating",
+            "description",
+            "genre",
+            "category",
+        )
+        model = Comment
