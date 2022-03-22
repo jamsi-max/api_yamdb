@@ -23,6 +23,7 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("username", "email")
+        read_only_fields = ("role", "is_staff", "is_superuser")
 
     def validate_username(self, value):
         if value == "me":
@@ -67,18 +68,41 @@ class GetTokenSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        validators=[UniqueValidator(
-            queryset=User.objects.all(),
-            message='Пользователь с таким именем уже существует.')])
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="Пользователь с таким именем уже существует.",
+            )
+        ]
+    )
     email = serializers.EmailField(
-        validators=[UniqueValidator(
-            queryset=User.objects.all(),
-            message='Пользователь с таким почтовым ящиком уже существует.')]
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="Пользователь с таким почтовым ящиком уже существует.",
+            )
+        ]
     )
 
     class Meta:
         fields = (
             "username",
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "role",
+        )
+        model = User
+
+
+class FullAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = (
+            "username",
+            "password",
+            "is_superuser",
+            "is_active",
             "email",
             "first_name",
             "last_name",

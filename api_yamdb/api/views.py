@@ -8,12 +8,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
-from rest_framework.permissions import IsAdminUser
 
-from .permissions import IsAdminOrReadOnly, IfUserIsAdministrator
+from .permissions import (IsAdminOrReadOnly,
+                          IfUserIsAdministrator,
+                          IfUserIsAuthorOrReadOnly)
 from .serializers import (GetTokenSerializer, SignupSerializer,
                           CategorySerializer, GenreSerializer,
-                          SignupSerializer, TitleSerializer, UserSerializer)
+                          SignupSerializer, TitleSerializer,
+                          UserSerializer, FullAccountSerializer)
 
 
 User = get_user_model()
@@ -80,17 +82,42 @@ class UsersViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_fields = ('username', )
+    lookup_field = 'username'
 
     def get_object(self):
         queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
+        obj = get_object_or_404(
+            queryset,
+            username=self.kwargs.get('username')
+        )
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+# class UsersMeViewSet(mixins.ListModelMixin,
+#                      mixins.UpdateModelMixin,
+#                      viewsets.GenericViewSet):
+#     queryset = None
+    # permission_classes = [IfUserIsAuthorOrReadOnly]
+    # serializer_class = UserSerializer
+
+    # def get_serializer_class(self):
+    #     if self.request.user.is_staff:
+    #         return FullAccountSerializer
+    #     return UserSerializer
+
+    # def get_object(self):
+    #     obj = get_object_or_404(
+    #         User,
+    #         id=self.request.user.id
+    #     )
+    #     return obj
+
+    # def list(self, request):
+    #     pass
+
+    # def update(self, request, pk=None):
+    #     pass
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
