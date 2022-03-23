@@ -92,9 +92,11 @@ class UsersViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, username=None):
         if username == 'me':
             username = request.user.username
+
         queryset = User.objects.all()
         user = get_object_or_404(queryset, username=username)
         serializer = UserSerializer(user)
+
         return Response(serializer.data)
 
     def partial_update(self, request, username=None):
@@ -110,6 +112,7 @@ class UsersViewSet(viewsets.ModelViewSet):
             serializer.save(role='user')
         else:
             serializer.save()
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, username=None):
