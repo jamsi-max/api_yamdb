@@ -21,6 +21,7 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email')
+        read_only_fields = ('role', 'is_staff', 'is_superuser')
 
     def validate_username(self, value):
         if value == 'me':
@@ -31,10 +32,10 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
-    verify_token = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
 
     class Meta:
-        fields = ('username', 'verify_token')
+        fields = ('username', 'confirmation_code')
 
     def validate_username(self, value):
         try:
@@ -46,7 +47,7 @@ class GetTokenSerializer(serializers.Serializer):
 
     def validate(self, data):
         try:
-            payload = RefreshToken(data.get('verify_token'))
+            payload = RefreshToken(data.get('confirmation_code'))
             user_id = payload.get('user_id', None)
         except TokenError:
             raise serializers.ValidationError(

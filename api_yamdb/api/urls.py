@@ -7,11 +7,14 @@ from .views import (CategoryViewSet, GengreViewSet, GetTokenView, SignupView,
 router = DefaultRouter()
 router.register('auth/signup', SignupView, basename='signup')
 router.register('auth/token', GetTokenView, basename='get_token')
-router.register('users', UsersViewSet, basename='titles')
+
 # router.register(
 #     'categories/<slug:slug>/',
 #     CategoryViewSet,
 # )
+
+router.register('users', UsersViewSet, basename='users')
+
 router.register('categories', CategoryViewSet, basename='categories')
 
 router.register('genres', GengreViewSet, basename='genres')
