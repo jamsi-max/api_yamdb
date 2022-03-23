@@ -1,10 +1,11 @@
-from rest_framework.exceptions import NotFound
 import datetime as dt
+
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
 
 User = get_user_model()
@@ -81,6 +82,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    # slug = serializers.SlugRelatedField(
+    #     read_only=True, slug_field='slug'
+    # )
+    pass
+
     class Meta:
         model = Category
         fields = ('name', 'slug')

@@ -1,3 +1,4 @@
+from tkinter.messagebox import NO
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
@@ -8,13 +9,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
-from rest_framework.permissions import IsAdminUser
 
-from .permissions import IsAdminOrReadOnly, IfUserIsAdministrator
-from .serializers import (GetTokenSerializer, SignupSerializer,
-                          CategorySerializer, GenreSerializer,
-                          SignupSerializer, TitleSerializer, UserSerializer)
-
+from .permissions import IfUserIsAdministrator, IsAdminOrReadOnly
+from .serializers import (CategorySerializer, GenreSerializer,
+                          GetTokenSerializer, SignupSerializer,
+                          TitleSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -99,7 +98,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
+
+    # def destroy(self, request, pk=None):
+    #     queryset = Category.objects.all()
+    #     category = get_object_or_404(queryset, slug=self.kwargs['slug'])
+        # category = get_object_or_404(queryset, slug=request.data.get('slug'))
+        # category = get_object_or_404(queryset, slug=slug)
+        # category = get_object_or_404(queryset, id=pk)
+        
+        # category.delete()
+        # return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GengreViewSet(viewsets.ModelViewSet):
@@ -108,7 +117,7 @@ class GengreViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
 
 
 class TitleViewSet(viewsets.ModelViewSet):
