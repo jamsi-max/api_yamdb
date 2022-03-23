@@ -15,8 +15,8 @@ from .permissions import (IfUserIsAdministrator, IfUserIsAuthorOrReadOnly,
                           IsAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, GetTokenSerializer,
-                          ReviewSerializer, SignupSerializer, TitleSerializer,
-                          UserSerializer)
+                          ReviewSerializer, SignupSerializer,
+                          TitleReadSerializer, TitleSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -137,49 +137,17 @@ class UsersViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, obj)
         return obj
 
-# class UsersMeViewSet(mixins.ListModelMixin,
-#                      mixins.UpdateModelMixin,
-#                      viewsets.GenericViewSet):
-#     queryset = None
-# permission_classes = [IfUserIsAuthorOrReadOnly]
-# serializer_class = UserSerializer
 
-# def get_serializer_class(self):
-#     if self.request.user.is_staff:
-#         return FullAccountSerializer
-#     return UserSerializer
-
-# def get_object(self):
-#     obj = get_object_or_404(
-#         User,
-#         id=self.request.user.id
-#     )
-#     return obj
-
-# def list(self, request):
-#     pass
-
-# def update(self, request, pk=None):
-#     pass
-
-
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
+                      mixins.RetrieveModelMixin, viewsets.GenericViewSet,
+                      mixins.ListModelMixin):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-
+    lookup_field = 'slug'
     search_fields = ('name', 'slug')
-
-    # def destroy(self, request, pk=None):
-    #     queryset = Category.objects.all()
-    #     category = get_object_or_404(queryset, slug=self.kwargs['slug'])
-    #     category = get_object_or_404(queryset, slug=request.data.get('slug'))
-    #     category = get_object_or_404(queryset, slug=slug)
-    #     category = get_object_or_404(queryset, id=pk)
-    #     category.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GengreViewSet(viewsets.ModelViewSet):
@@ -188,17 +156,22 @@ class GengreViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-
     search_fields = ('name', 'slug')
+    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ("category", "genre", "name", "year")
+    filterset_fields = ("category", "name", "year", "genre__slug")
+
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return TitleReadSerializer
+        return TitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

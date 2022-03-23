@@ -117,11 +117,7 @@ class FullAccountSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    # slug = serializers.SlugRelatedField(
-    #     read_only=True, slug_field='slug'
-    # )
-    pass
-
+    # slug = serializers.SlugField()
     class Meta:
         model = Category
         fields = ("name", "slug")
@@ -137,13 +133,10 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ("name", "slug")
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(), slug_field="slug"
-    )
-    genre = serializers.SlugRelatedField(
-        queryset=Genre.objects.all(), slug_field="slug", many=True
-    )
+class TitleReadSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField()
 
     class Meta:
         model = Title
@@ -156,12 +149,40 @@ class TitleSerializer(serializers.ModelSerializer):
             "genre",
             "category",
         )
+        read_only_fields = fields
+
+    def get_rating(self, obj):
+        return 0
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field="slug"
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(), slug_field="slug", many=True
+    )
+    # rating = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            "id",
+            "name",
+            "year",
+            "description",
+            "genre",
+            "category",
+        )
 
     def validate_year(self, value):
         year = dt.date.today().year
         if not (value <= year):
             raise serializers.ValidationError("Проверьте год произведения!")
         return value
+
+    def get_rating(self, obj):
+        return 0
 
 
 class ReviewSerializer(serializers.ModelSerializer):

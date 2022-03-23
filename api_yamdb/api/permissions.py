@@ -15,7 +15,10 @@ class IfUserIsModerator(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            return request.user.role == 'moderator' or request.user.is_superuser
+            return (
+                request.user.role == 'moderator'
+                or request.user.is_superuser
+            )
         return False
 
 
