@@ -1,62 +1,62 @@
-from django.core.management.base import BaseCommand, CommandError
-import csv, sqlite3
-import os
-import re
+# from django.core.management.base import BaseCommand, CommandError
+# import csv, sqlite3
+# import os
+# import re
 
-from api_yamdb.settings import BASE_DIR
-
-
-def ensure_connection(func):
-    def inner(*args, **kwargs):
-        with sqlite3.connect('db.sqlite3') as conn:
-            result = func(*args, conn=conn, **kwargs)
-        return result
-    return inner
+# from api_yamdb.settings import BASE_DIR
 
 
-class Command(BaseCommand):
-    help = 'Closes the specified poll for voting'
+# def ensure_connection(func):
+#     def inner(*args, **kwargs):
+#         with sqlite3.connect('db.sqlite3') as conn:
+#             result = func(*args, conn=conn, **kwargs)
+#         return result
+#     return inner
 
-    def search(self, file_name, endswith=False):
-        data_list = []
-        pattern = f'^{file_name}$'
 
-        if endswith:
-            pattern = f'{file_name}$'
+# class Command(BaseCommand):
+#     help = 'Closes the specified poll for voting'
 
-        for root, dirs, files in os.walk(f'{BASE_DIR}'):
-            for file in files:
-                if re.findall(pattern, file):
-                    data_list.append(os.path.join(root, file))
-        return data_list
+#     def search(self, file_name, endswith=False):
+#         data_list = []
+#         pattern = f'^{file_name}$'
 
-    def add_arguments(self, parser):
-        parser.add_argument('bd_name', type=str)
+#         if endswith:
+#             pattern = f'{file_name}$'
 
-    @ensure_connection
-    def handle(self, conn, *args, **options):
-        file_list_csv = self.search('.csv', endswith=True)
-        db = self.search(options.get('bd_name'))
-        table_list = ['reviews_category',
-                      'reviews_comments',
-                      'reviews_genre',
-                      'reviews_genretitle',
-                      'reviews_review',
-                      'reviews_title',
-                      'users']
+#         for root, dirs, files in os.walk(f'{BASE_DIR}'):
+#             for file in files:
+#                 if re.findall(pattern, file):
+#                     data_list.append(os.path.join(root, file))
+#         return data_list
 
-        if not db:
-            raise CommandError('Файл базы данных не найден')
+#     def add_arguments(self, parser):
+#         parser.add_argument('bd_name', type=str)
 
-        if not file_list_csv:
-            raise CommandError('Файл .csv не найден')
+#     @ensure_connection
+#     def handle(self, conn, *args, **options):
+#         file_list_csv = self.search('.csv', endswith=True)
+#         db = self.search(options.get('bd_name'))
+#         table_list = ['reviews_category',
+#                       'reviews_comments',
+#                       'reviews_genre',
+#                       'reviews_genretitle',
+#                       'reviews_review',
+#                       'reviews_title',
+#                       'users']
 
-        for table_name in file_list_csv:
-            with open(table_name, encoding='utf-8') as f:
-                reader = csv.reader(f)
-                headers = next(reader)
-                print("*"*80)
-                print(table_name)
+#         if not db:
+#             raise CommandError('Файл базы данных не найден')
+
+#         if not file_list_csv:
+#             raise CommandError('Файл .csv не найден')
+
+#         for table_name in file_list_csv:
+#             with open(table_name, encoding='utf-8') as f:
+#                 reader = csv.reader(f)
+#                 headers = next(reader)
+#                 print("*"*80)
+#                 print(table_name)
 
                 # cursor = conn.cursor()
                 # cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and sql LIKE '%id%username%email%role%bio%first_name%last_name%';")
