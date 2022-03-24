@@ -149,6 +149,18 @@ class CategoryViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
     lookup_field = 'slug'
     search_fields = ('name', 'slug')
 
+    def retrieve(self, request, slug=None):
+        queryset = Category.objects.all()
+        try:
+            category = queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = CategorySerializer(category)
+        return Response(serializer.data)
+
 
 class GengreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
@@ -159,14 +171,58 @@ class GengreViewSet(viewsets.ModelViewSet):
     search_fields = ('name', 'slug')
     lookup_field = 'slug'
 
+    def retrieve(self, request, slug=None):
+        queryset = Genre.objects.all()
+        try:
+            genre = queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = GenreSerializer(genre)
+        return Response(serializer.data)
+
+    def partial_update(self, request, slug=None):
+        queryset = Genre.objects.all()
+        try:
+            queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        super.partial_update(request, slug=None)
+
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ("category", "name", "year", "genre__slug")
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_fields = ('genre__slug', 'category__slug', 'year', 'name')
 
+    def get_queryset(self):
+        queryset = Title.objects.all()
+
+        genre = self.request.query_params.get('genre')
+        category = self.request.query_params.get('category')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+
+        if genre is not None:
+            queryset = queryset.filter(genre__slug=genre)
+
+        if category is not None:
+            queryset = queryset.filter(category__slug=category)
+
+        if year is not None:
+            queryset = queryset.filter(year=year)
+
+        if name is not None:
+            queryset = queryset.filter(name__icontains=name)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

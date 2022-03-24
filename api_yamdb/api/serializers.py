@@ -100,22 +100,6 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
 
-class FullAccountSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = (
-            "username",
-            "password",
-            "is_superuser",
-            "is_active",
-            "email",
-            "first_name",
-            "last_name",
-            "bio",
-            "role",
-        )
-        model = User
-
-
 class CategorySerializer(serializers.ModelSerializer):
     # slug = serializers.SlugField()
     class Meta:
