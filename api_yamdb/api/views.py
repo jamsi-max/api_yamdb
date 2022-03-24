@@ -1,3 +1,5 @@
+from xml.etree.ElementTree import Comment
+
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
@@ -7,30 +9,30 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Comment, Genre, Title
 
-from .permissions import (IsAdminOrReadOnly,
-                          IfUserIsAdministrator)
-from .serializers import (GetTokenSerializer, SignupSerializer,
-                          CategorySerializer, GenreSerializer,
-                          SignupSerializer, TitleSerializer,
-                          UserSerializer)
-
+from .permissions import (IfUserIsAdministrator, IfUserIsAuthorOrReadOnly,
+                          IsAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          ReviewSerializer, SignupSerializer,
+                          TitleReadSerializer, TitleSerializer, UserSerializer)
 
 User = get_user_model()
 
 
-class SignupView(mixins.CreateModelMixin,
-                 viewsets.GenericViewSet):
+class SignupView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = SignupSerializer
     queryset = User.objects.all()
-    permission_classes = [AllowAny, ]
+    permission_classes = [
+        AllowAny,
+    ]
 
     def create(self, request, *args, **kwargs):
-        message = {'info': 'Код потверждения отправлен на электронную почту!'}
+        message = {"info": "Код потверждения отправлен на электронную почту!"}
         headers = None
-        username = request.data.get('username')
-        email = request.data.get('email')
+        username = request.data.get("username")
+        email = request.data.get("email")
         user = User.objects.filter(username=username, email=email).first()
 
         if user is None:
@@ -42,23 +44,26 @@ class SignupView(mixins.CreateModelMixin,
 
         comfirm_token = RefreshToken.for_user(user)
 
-        send_mail('Подтверждение регистрации на Yambd',
-                  f'Ваш код подтверждения {comfirm_token}',
-                  'yambd@yambd.com',
-                  [user.email, ],
-                  fail_silently=False)
+        send_mail(
+            "Подтверждение регистрации на Yambd",
+            f"Ваш код подтверждения {comfirm_token}",
+            "yambd@yambd.com",
+            [
+                user.email,
+            ],
+            fail_silently=False,
+        )
 
-        return Response(message,
-                        status=status.HTTP_200_OK,
-                        headers=headers)
+        return Response(message, status=status.HTTP_200_OK, headers=headers)
 
     def perform_create(self, serializer):
         return serializer.save()
 
 
-class GetTokenView(mixins.CreateModelMixin,
-                   viewsets.GenericViewSet):
-    permission_classes = [AllowAny, ]
+class GetTokenView(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    permission_classes = [
+        AllowAny,
+    ]
     serializer_class = GetTokenSerializer
 
     def create(self, request, *args, **kwargs):
@@ -66,21 +71,21 @@ class GetTokenView(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
 
         user = User.objects.filter(
-            username=request.data.get('username')
+            username=request.data.get("username")
         ).first()
         token = RefreshToken.for_user(user)
         access_token = str(token.access_token)
 
         return Response(
-            {'access_token': access_token},
-            status=status.HTTP_200_OK)
+            {"access_token": access_token}, status=status.HTTP_200_OK
+        )
 
 
 class UsersViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'username'
+    lookup_field = "username"
 
     def get_permissions(self):
         if self.kwargs.get('username') == 'me':
@@ -128,21 +133,33 @@ class UsersViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         queryset = self.get_queryset()
-        obj = get_object_or_404(
-            queryset,
-            username=self.kwargs.get('username')
-        )
+        obj = get_object_or_404(queryset, username=self.kwargs.get("username"))
         self.check_object_permissions(self.request, obj)
         return obj
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
+                      mixins.RetrieveModelMixin, viewsets.GenericViewSet,
+                      mixins.ListModelMixin):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    lookup_field = 'slug'
+    search_fields = ('name', 'slug')
+
+    def retrieve(self, request, slug=None):
+        queryset = Category.objects.all()
+        try:
+            category = queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = CategorySerializer(category)
+        return Response(serializer.data)
 
 
 class GengreViewSet(viewsets.ModelViewSet):
@@ -151,13 +168,105 @@ class GengreViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
+    lookup_field = 'slug'
+
+    def retrieve(self, request, slug=None):
+        queryset = Genre.objects.all()
+        try:
+            genre = queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = GenreSerializer(genre)
+        return Response(serializer.data)
+
+    def partial_update(self, request, slug=None):
+        queryset = Genre.objects.all()
+        try:
+            queryset.get(slug=slug)
+        except Exception:
+            return Response(
+                {'info': 'Метод не разрешен'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        super.partial_update(request, slug=None)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_fields = ('genre__slug', 'category__slug', 'year', 'name')
+
+    def get_queryset(self):
+        queryset = Title.objects.all()
+
+        genre = self.request.query_params.get('genre')
+        category = self.request.query_params.get('category')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+
+        if genre is not None:
+            queryset = queryset.filter(genre__slug=genre)
+
+        if category is not None:
+            queryset = queryset.filter(category__slug=category)
+
+        if year is not None:
+            queryset = queryset.filter(year=year)
+
+        if name is not None:
+            queryset = queryset.filter(name__icontains=name)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return TitleReadSerializer
+        return TitleSerializer
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [
+        IfUserIsAuthorOrReadOnly,
+    ]
+    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
+        return serializer.save(author=self.request.user, title=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [
+        IfUserIsAuthorOrReadOnly,
+    ]
+    pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        review = get_object_or_404(
+            Comment,
+            id=self.kwargs.get("review_id"),
+            title__id=self.kwargs["title_id"],
+        )
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(
+            Comment,
+            id=self.kwargs.get("review_id"),
+            title__id=self.kwargs["title_id"],
+        )
+        return serializer.save(author=self.request.user, review=review)
