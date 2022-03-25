@@ -57,13 +57,14 @@ class Review(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["author", "title"], name="unique_name_owner"
+                fields=['author', 'title'],
+                name='unique_name_owner'
             )
         ]
 
 
 class Comment(models.Model):
-    review = models.ForeignKey(
+    review_id = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name="comments",

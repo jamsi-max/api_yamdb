@@ -9,7 +9,6 @@ from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
@@ -44,7 +43,7 @@ class GetTokenSerializer(serializers.Serializer):
 
     class Meta:
 
-        fields = ("username", "confirmation_code")
+        fields = ('username', 'confirmation_code')
 
     def validate_username(self, value):
         try:
@@ -57,8 +56,8 @@ class GetTokenSerializer(serializers.Serializer):
     def validate(self, data):
         try:
 
-            payload = RefreshToken(data.get("confirmation_code"))
-            user_id = payload.get("user_id", None)
+            payload = RefreshToken(data.get('confirmation_code'))
+            user_id = payload.get('user_id', None)
 
         except TokenError:
             raise serializers.ValidationError(
@@ -112,9 +111,8 @@ class CategorySerializer(serializers.ModelSerializer):
                 message="Такой slug уже существует",
             ),
             RegexValidator(
-                re.compile(r"^[-a-zA-Z0-9_]+$"),
-                message="Slug может содержать латинские буквы, цифры и знак _",
-            ),
+                re.compile(r'^[-a-zA-Z0-9_]+$'),
+                message="Slug может содержать латинские буквы, цифры и знак _")
         ]
     )
 
@@ -124,6 +122,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Genre
         fields = ("name", "slug")
@@ -149,7 +148,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         queryset = Review.objects.filter(title_id=obj.id)
-        return queryset.aggregate(Avg("score")).get("score__avg")
+        return queryset.aggregate(Avg('score')).get('score__avg')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -180,11 +179,15 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field="username"
+        read_only=True, slug_field='username'
     )
 
     class Meta:
-        fields = ("id", "text", "author", "score", "pub_date")
+        fields = ('id',
+                  'text',
+                  'author',
+                  'score',
+                  'pub_date')
         model = Review
 
 
