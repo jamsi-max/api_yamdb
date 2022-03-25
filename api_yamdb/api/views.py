@@ -191,7 +191,6 @@ class GengreViewSet(viewsets.ModelViewSet):
             return Response(
                 {'info': 'Метод не разрешен'},
                 status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
         super.partial_update(request, slug=None)
 
 
