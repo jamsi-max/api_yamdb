@@ -258,8 +258,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [
-        IfUserIsAuthorOrReadOnly,
         IsAuthenticatedOrReadOnly,
+        IfUserIsAuthorOrReadOnly,
     ]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
