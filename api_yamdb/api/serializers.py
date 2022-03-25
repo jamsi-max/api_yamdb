@@ -1,14 +1,16 @@
+from django.db.models import Avg
 import datetime as dt
-
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Comment, Genre, Review, Title
 import re
 from django.core.validators import RegexValidator
+
+from reviews.models import Category, Comment, Genre, Review, Title
+
 
 User = get_user_model()
 
@@ -121,6 +123,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Genre
         fields = ("name", "slug")
@@ -129,7 +132,7 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.IntegerField()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
@@ -145,7 +148,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_rating(self, obj):
-        return 0
+        queryset = Review.objects.filter(title_id=obj.id)
+        return queryset.aggregate(Avg('score')).get('score__avg')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -155,7 +159,6 @@ class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(), slug_field="slug", many=True
     )
-    # rating = serializers.IntegerField(required=True)
 
     class Meta:
         model = Title
@@ -173,9 +176,6 @@ class TitleSerializer(serializers.ModelSerializer):
         if not (value <= year):
             raise serializers.ValidationError("Проверьте год произведения!")
         return value
-
-    def get_rating(self, obj):
-        return 0
 
 
 class ReviewSerializer(serializers.ModelSerializer):
