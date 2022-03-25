@@ -7,6 +7,8 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Comment, Genre, Review, Title
+import re
+from django.core.validators import RegexValidator
 
 User = get_user_model()
 
@@ -101,14 +103,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    # slug = serializers.SlugField()
+    slug = serializers.SlugField(
+        validators=[
+            UniqueValidator(
+                queryset=Category.objects.all(),
+                message="Такой slug уже существует",
+            ),
+            RegexValidator(
+                re.compile(r'^[-a-zA-Z0-9_]+$'),
+                message="Slug может содержать латинские буквы, цифры и знак _")
+        ]
+    )
+
     class Meta:
         model = Category
         fields = ("name", "slug")
-
-    def validate_slug(self, value):
-        # валидация символов?
-        return value
 
 
 class GenreSerializer(serializers.ModelSerializer):
