@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -7,7 +8,6 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.utils import IntegrityError
 
 from reviews.models import Category, Genre, Title, Review
 from .permissions import (IfUserIsAdministrator, IfUserIsAuthorOrReadOnly,
@@ -87,14 +87,14 @@ class UsersViewSet(viewsets.ModelViewSet):
     lookup_field = "username"
 
     def get_permissions(self):
-        if self.kwargs.get('username') == 'me':
+        if self.kwargs.get("username") == "me":
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IfUserIsAdministrator]
         return [permission() for permission in permission_classes]
 
     def retrieve(self, request, username=None):
-        if username == 'me':
+        if username == "me":
             username = request.user.username
 
         queryset = User.objects.all()
@@ -104,7 +104,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def partial_update(self, request, username=None):
-        if username == 'me':
+        if username == "me":
             username = request.user.username
 
         queryset = User.objects.all()
@@ -112,23 +112,25 @@ class UsersViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        if request.user.role == 'user':
-            serializer.save(role='user')
+        if request.user.role == "user":
+            serializer.save(role="user")
         else:
             serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, username=None):
-        if request.user.role == 'admin' or request.user.is_superuser:
+        if request.user.role == "admin" or request.user.is_superuser:
             super().destroy(request, username=None)
             return Response(
-                {'info': 'Объект успешно удален'},
-                status=status.HTTP_204_NO_CONTENT)
+                {"info": "Объект успешно удален"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         else:
             return Response(
-                {'info': 'Метод не разрешен'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+                {"info": "Метод не разрешен"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -137,16 +139,20 @@ class UsersViewSet(viewsets.ModelViewSet):
         return obj
 
 
-class CategoryViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
-                      mixins.RetrieveModelMixin, viewsets.GenericViewSet,
-                      mixins.ListModelMixin):
+class CategoryViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    lookup_field = 'slug'
-    search_fields = ('name', 'slug')
+    lookup_field = "slug"
+    search_fields = ("name", "slug")
 
     def retrieve(self, request, slug=None):
         queryset = Category.objects.all()
@@ -154,21 +160,22 @@ class CategoryViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
             category = queryset.get(slug=slug)
         except Exception:
             return Response(
-                {'info': 'Метод не разрешен'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+                {"info": "Метод не разрешен"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         serializer = CategorySerializer(category)
         return Response(serializer.data)
 
 
-class GengreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', 'slug')
-    lookup_field = 'slug'
+    search_fields = ("name", "slug")
+    lookup_field = "slug"
 
     def retrieve(self, request, slug=None):
         queryset = Genre.objects.all()
@@ -176,8 +183,9 @@ class GengreViewSet(viewsets.ModelViewSet):
             genre = queryset.get(slug=slug)
         except Exception:
             return Response(
-                {'info': 'Метод не разрешен'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+                {"info": "Метод не разрешен"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         serializer = GenreSerializer(genre)
         return Response(serializer.data)
@@ -188,8 +196,9 @@ class GengreViewSet(viewsets.ModelViewSet):
             queryset.get(slug=slug)
         except Exception:
             return Response(
-                {'info': 'Метод не разрешен'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+                {"info": "Метод не разрешен"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         super.partial_update(request, slug=None)
 
@@ -198,17 +207,13 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
-    # !!!не работает видимо из-за разных сериалайзеов!!!
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_fields = ('genre__slug', 'category__slug', 'year', 'name')
 
     def get_queryset(self):
         queryset = Title.objects.all()
-
-        genre = self.request.query_params.get('genre')
-        category = self.request.query_params.get('category')
-        year = self.request.query_params.get('year')
-        name = self.request.query_params.get('name')
+        genre = self.request.query_params.get("genre")
+        category = self.request.query_params.get("category")
+        year = self.request.query_params.get("year")
+        name = self.request.query_params.get("name")
 
         if genre is not None:
             queryset = queryset.filter(genre__slug=genre)
@@ -225,7 +230,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.request.method == "GET":
             return TitleReadSerializer
         return TitleSerializer
 
@@ -233,7 +238,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
 
     def get_permissions(self):
         if self.action in ('retrieve', 'list'):
@@ -247,23 +252,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        title = get_object_or_404(
-            Title,
-            id=self.kwargs.get("title")
-        )
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
         review_set = title.reviews.all()
         return review_set
 
     def perform_create(self, serializer):
-        title = get_object_or_404(
-            Title,
-            id=self.kwargs.get("title")
-        )
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
 
-        serializer.save(
-            author=self.request.user,
-            title=title
-        )
+        serializer.save(author=self.request.user, title=title)
 
     def create(self, request, *args, **kwargs):
         try:
@@ -271,7 +267,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         except IntegrityError:
             return Response(
                 {"info": "Повторная попытка оставить отзыв запрещена!"},
-                status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -294,7 +291,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(
             Review,
             id=self.kwargs.get("review_id"),
-            title__id=self.kwargs["title_id"],
+            title=self.kwargs.get("title_id"),
         )
         return review.comments.all()
 
