@@ -1,7 +1,7 @@
 import datetime as dt
 
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
+from rest_framework import serializers, validators
 from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import TokenError
@@ -42,7 +42,7 @@ class GetTokenSerializer(serializers.Serializer):
 
     class Meta:
 
-        fields = ('username', 'confirmation_code')
+        fields = ("username", "confirmation_code")
 
     def validate_username(self, value):
         try:
@@ -55,8 +55,8 @@ class GetTokenSerializer(serializers.Serializer):
     def validate(self, data):
         try:
 
-            payload = RefreshToken(data.get('confirmation_code'))
-            user_id = payload.get('user_id', None)
+            payload = RefreshToken(data.get("confirmation_code"))
+            user_id = payload.get("user_id", None)
 
         except TokenError:
             raise serializers.ValidationError(
@@ -110,8 +110,9 @@ class CategorySerializer(serializers.ModelSerializer):
                 message="Такой slug уже существует",
             ),
             RegexValidator(
-                re.compile(r'^[-a-zA-Z0-9_]+$'),
-                message="Slug может содержать латинские буквы, цифры и знак _")
+                re.compile(r"^[-a-zA-Z0-9_]+$"),
+                message="Slug может содержать латинские буквы, цифры и знак _",
+            ),
         ]
     )
 
@@ -129,7 +130,7 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.IntegerField()
+    rating = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Title
@@ -183,19 +184,20 @@ class ReviewSerializer(serializers.ModelSerializer):
         many=False, read_only=True, slug_field="username"
     )
 
-    def check_review_exist_from_author(self, value):
-        if self.context.get("request").user != "POST":
-            return value
+    def check_review_exist_from_author(self, data):
         user = self.context.get("request").user
-        title_id = self.context["review"].kwargs["title_id"]
-        if Review.objects.filter(author=user, title_id=title_id).exists():
-            raise serializers.ValidationError(
+        title = self.context["title"]
+        if (
+            self.context["request"].method == "POST"
+            and Review.objects.filter(title=title, author=user).exists()
+        ):
+            raise validators.ValidationError(
                 "Нельзя оставить отзыв на одно и тоже произведение дважды"
             )
-        return value
+        return data
 
     class Meta:
-        fields = ("id", "name", "year", "description", "genre", "category")
+        fields = ("id", "text", "author", "score", "pub_date")
         model = Review
 
 
@@ -203,15 +205,8 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         many=False, read_only=True, slug_field="username"
     )
+    review = serializers.SlugRelatedField(read_only=True, slug_field="text")
 
     class Meta:
-        fields = (
-            "id",
-            "name",
-            "year",
-            "rating",
-            "description",
-            "genre",
-            "category",
-        )
+        fields = "__all__"
         model = Comment

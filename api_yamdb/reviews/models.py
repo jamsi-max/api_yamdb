@@ -25,7 +25,7 @@ class Title(models.Model):
     name = models.CharField(max_length=200)
     year = models.IntegerField()
     description = models.TextField()
-    rating = models.IntegerField(null=True)
+    # rating = models.IntegerField(null=True)
     category = models.ForeignKey(
         Category, related_name="titles", null=True, on_delete=models.SET_NULL
     )
