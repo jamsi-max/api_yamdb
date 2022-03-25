@@ -7,6 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
+<<<<<<< HEAD
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -33,6 +34,22 @@ from .serializers import (
     TitleSerializer,
     UserSerializer,
 )
+=======
+from rest_framework.permissions import (AllowAny,
+                                        IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.utils import IntegrityError
+
+from reviews.models import Category, Comment, Genre, Title
+from .permissions import (IfUserIsAdministrator, IfUserIsAuthorOrReadOnly,
+                          IsAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          ReviewSerializer, SignupSerializer,
+                          TitleReadSerializer, TitleSerializer, UserSerializer)
+>>>>>>> 8ae46912371ceb5f83bbdabc3e120a4121e2039e
 
 User = get_user_model()
 
@@ -224,6 +241,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg("reviews__score"))
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
+    # !!!не работает видимо из-за разных сериалайзеов!!!
     # filter_backends = (DjangoFilterBackend,)
     # filterset_fields = ("genre__slug", "category__slug", "year", "name")
 
@@ -259,19 +277,42 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [
         IsAuthenticatedOrReadOnly,
-        IfUserIsAuthorOrReadOnly,
     ]
     pagination_class = LimitOffsetPagination
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, )
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response(
+                {"info": "Повторная попытка оставить отзыв запрещена!"},
+                status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
-        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
-        return title.reviews.all()
+        title = get_object_or_404(
+            Title,
+            id=self.kwargs.get("title")
+        )
+        review_set = title.reviews.all()
+        return review_set
 
     def perform_create(self, serializer):
+<<<<<<< HEAD
         title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
         user = self.request.user
         return serializer.save(author=user, title=title)
+=======
+        title = get_object_or_404(
+            Title,
+            id=self.kwargs.get("title")
+        )
+
+        serializer.save(
+            author=self.request.user,
+            title=title
+        )
+>>>>>>> 8ae46912371ceb5f83bbdabc3e120a4121e2039e
 
 
 class CommentViewSet(viewsets.ModelViewSet):

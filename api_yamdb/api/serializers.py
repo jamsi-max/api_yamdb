@@ -180,23 +180,15 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        many=False, read_only=True, slug_field="username"
+        read_only=True, slug_field='username'
     )
 
-    def check_review_exist_from_author(self, data):
-        user = self.context.get("request").user
-        title = self.context["title"]
-        if (
-            self.context["request"].method == "POST"
-            and Review.objects.filter(title=title, author=user).exists()
-        ):
-            raise validators.ValidationError(
-                "Нельзя оставить отзыв на одно и тоже произведение дважды"
-            )
-        return data
-
     class Meta:
-        fields = ("id", "text", "author", "score", "pub_date")
+        fields = ('id',
+                  'text',
+                  'author',
+                  'score',
+                  'pub_date')
         model = Review
 
 
