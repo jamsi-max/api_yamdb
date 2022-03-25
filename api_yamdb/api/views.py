@@ -1,21 +1,17 @@
-from xml.etree.ElementTree import Comment
-
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (AllowAny,
-                                        IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.utils import IntegrityError
 
-from reviews.models import Category, Comment, Genre, Title
+from reviews.models import Category, Genre, Title, Review
 from .permissions import (IfUserIsAdministrator, IfUserIsAuthorOrReadOnly,
-                          IsAdminOrReadOnly)
+                          IsAdminOrReadOnly, IfUserIsModerator)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, GetTokenSerializer,
                           ReviewSerializer, SignupSerializer,
@@ -236,19 +232,19 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [
-        IsAuthenticatedOrReadOnly,
-    ]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend, )
 
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:
-            return Response(
-                {"info": "Повторная попытка оставить отзыв запрещена!"},
-                status=status.HTTP_400_BAD_REQUEST)
+    def get_permissions(self):
+        if self.action in ('retrieve', 'list'):
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [
+                IfUserIsAuthorOrReadOnly
+                | IfUserIsModerator
+                | IfUserIsAdministrator
+            ]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         title = get_object_or_404(
@@ -269,18 +265,34 @@ class ReviewViewSet(viewsets.ModelViewSet):
             title=title
         )
 
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response(
+                {"info": "Повторная попытка оставить отзыв запрещена!"},
+                status=status.HTTP_400_BAD_REQUEST)
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [
-        IfUserIsAuthorOrReadOnly,
-    ]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
 
+    def get_permissions(self):
+        if self.action in ('retrieve', 'list'):
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [
+                IfUserIsAuthorOrReadOnly
+                | IfUserIsModerator
+                | IfUserIsAdministrator
+            ]
+        return [permission() for permission in permission_classes]
+
     def get_queryset(self):
         review = get_object_or_404(
-            Comment,
+            Review,
             id=self.kwargs.get("review_id"),
             title__id=self.kwargs["title_id"],
         )
@@ -288,8 +300,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         review = get_object_or_404(
-            Comment,
+            Review,
             id=self.kwargs.get("review_id"),
-            title__id=self.kwargs["title_id"],
         )
-        return serializer.save(author=self.request.user, review=review)
+        return serializer.save(author=self.request.user, review_id=review)
