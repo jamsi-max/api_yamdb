@@ -1,7 +1,6 @@
-from xml.etree.ElementTree import Comment
-
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -10,16 +9,13 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
-    IsAdminUser,
 )
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.utils import IntegrityError
-from reviews.models import Category, Comment, Genre, Title, Review
+
+from reviews.models import Category, Genre, Review, Title
 from .permissions import (
     IfUserIsAdministrator,
-    IfUserIsAuthorOrReadOnly,
-    IfUserIsModerator,
     IsAdminOrReadOnly,
     IsAuthorOrAdminOrModeratorOrReadOnly,
 )
@@ -186,7 +182,7 @@ class CategoryViewSet(
         return Response(serializer.data)
 
 
-class GengreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -225,13 +221,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
-    # !!!не работает видимо из-за разных сериалайзеов!!!
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_fields = ('genre__slug', 'category__slug', 'year', 'name')
 
     def get_queryset(self):
         queryset = Title.objects.all()
-
         genre = self.request.query_params.get("genre")
         category = self.request.query_params.get("category")
         year = self.request.query_params.get("year")

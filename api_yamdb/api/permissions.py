@@ -12,17 +12,6 @@ class IfUserIsAuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
             return True
 
 
-class IsAuthorOrAdminOrModeratorOrReadOnly(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if (
-            request.method in permissions.SAFE_METHODS
-            or request.user == obj.author
-            or request.user.role == "admin"
-            or request.user.role == "moderator"
-        ):
-            return True
-
-
 class IfUserIsModerator(permissions.BasePermission):
     message = "Действие разрешено только модератору!"
 
@@ -49,3 +38,14 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         return request.method in permissions.SAFE_METHODS or (
             request.user.is_authenticated and request.user.role == "admin"
         )
+
+
+class IsAuthorOrAdminOrModeratorOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if (
+            request.method in permissions.SAFE_METHODS
+            or request.user == obj.author
+            or request.user.role == "admin"
+            or request.user.role == "moderator"
+        ):
+            return True

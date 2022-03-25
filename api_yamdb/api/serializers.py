@@ -1,16 +1,16 @@
-from django.db.models import Avg
 import datetime as dt
+import re
+
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-import re
-from django.core.validators import RegexValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
-
 
 User = get_user_model()
 
