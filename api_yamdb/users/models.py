@@ -37,8 +37,8 @@ class YamdbUser(AbstractUser):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     role = models.CharField(
-        max_length=9,
         choices=ROLE,
+        max_length=len(max([max(i) for i in ROLE], key=len)),
         default=UserRole.USER,
     )
     bio = models.TextField("Биография", blank=True)
@@ -55,9 +55,9 @@ class YamdbUser(AbstractUser):
     def is_moderator(self):
         return self.role == UserRole.MODERATOR
 
-    @property
-    def is_moderator(self):
-        return self.role == UserRole.MODERATOR
+    # @property
+    # def is_superuser(self):
+    #     return self.is_staff
 
     def __str__(self):
         return self.username
